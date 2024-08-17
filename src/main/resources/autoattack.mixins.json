@@ -2,12 +2,11 @@
   "required": true,
   "minVersion": "0.8",
   "package": "vin35.autoattack.mixin",
-  "compatibilityLevel": "JAVA_17",
+  "compatibilityLevel": "JAVA_21",
   "mixins": [
   ],
   "client": [
-    "AutoAttackMixin",
-    "GameRenderMixin"
+    "AutoAttackMixin"
   ],
   "injectors": {
     "defaultRequire": 1

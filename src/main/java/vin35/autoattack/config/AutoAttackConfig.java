@@ -1,10 +1,8 @@
 package vin35.autoattack.config;
 
-import eu.midnightdust.lib.config.MidnightConfig.Comment;
-import eu.midnightdust.lib.config.MidnightConfig.Entry;
-import vin35.autoattack.AutoAttack;
+import eu.midnightdust.lib.config.MidnightConfig;
 
-public class AutoAttackConfig extends AutoAttack {
+public class AutoAttackConfig extends MidnightConfig {
     @Comment
     public static Comment text1;
     @Entry
