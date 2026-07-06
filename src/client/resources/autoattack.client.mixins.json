@@ -3,11 +3,9 @@
   "minVersion": "0.8",
   "package": "vin35.autoattack.mixin",
   "compatibilityLevel": "JAVA_25",
-  "mixins": [
-  ],
   "client": [
     "AutoAttackMixin",
-    "GameRenderMixin"
+    "MinecraftPickMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -23,7 +23,7 @@ import vin35.autoattack.config.AutoAttackConfig;
 
 @Environment(EnvType.CLIENT)
 @Mixin(Minecraft.class)
-public class GameRenderMixin {
+public class MinecraftPickMixin {
 
     @Shadow public HitResult hitResult;
     @Shadow public LocalPlayer player;

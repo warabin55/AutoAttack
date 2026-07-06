@@ -11,12 +11,13 @@
   "contributors": [
     "Tfarecnim",
     "BlazingTwist",
-    "Rongmario"
+    "Rongmario",
+    "Warabin"
   ],
   "contact": {
-    "homepage": "https://www.curseforge.com/minecraft/mc-mods/autoattack",
-    "sources": "https://github.com/vin350/AutoAttack",
-    "issues": "https://github.com/vin350/AutoAttack/issues"
+    "homepage": "https://github.com/warabin55/AutoAttack",
+    "sources": "https://github.com/warabin55/AutoAttack",
+    "issues": "https://github.com/warabin55/AutoAttack/issues"
   },
 
   "license": "MIT",
@@ -33,7 +34,10 @@
     ]
   },
   "mixins": [
-    "autoattack.mixins.json"
+    {
+      "config": "autoattack.client.mixins.json",
+      "environment": "client"
+    }
   ],
 
   "depends": {
