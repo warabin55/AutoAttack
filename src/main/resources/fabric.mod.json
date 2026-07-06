@@ -4,7 +4,7 @@
   "version": "${mod_version}",
 
   "name": "Auto Attack",
-  "description": "Auto Attack makes it so that holding the attack button autoswings the sword, similar to the combat snapshots.",
+  "description": "Hold down the attack button and your character will keep swinging automatically, timed to the attack cooldown — no need to click repeatedly.",
   "authors": [
     "Vin35"
   ],

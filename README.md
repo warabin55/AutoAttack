@@ -3,7 +3,7 @@
 An unofficial fork of [vin350/AutoAttack](https://github.com/vin350/AutoAttack), updated for newer Minecraft versions.
 The original mod is published by Vin35 — this fork is not affiliated with, or endorsed by, the original author.
 
-Auto Attack makes it so that holding the attack button autoswings the sword, similar to the combat snapshots.
+Hold down the attack button and your character will keep swinging automatically, timed to the attack cooldown — no need to click repeatedly.
 
 ## Download
 
