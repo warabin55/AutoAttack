@@ -3,19 +3,19 @@ package vin35.autoattack.util;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.minecraft.GameVersion;
-import net.minecraft.MinecraftVersion;
+import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.util.regex.Pattern;
 
 public class UpdateUtil {
     private static String getJsonString(String sURL) {
         try {
-            URL obj = new URL(sURL);
+            URL obj = URI.create(sURL).toURL();
             HttpURLConnection con = (HttpURLConnection) obj.openConnection();
             BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
             String inputLine;
@@ -43,9 +43,9 @@ public class UpdateUtil {
     }
 
     public static String getMinecraftVersion() {
-        GameVersion minecraftVersion = MinecraftVersion.create();
-        String versionStr = minecraftVersion.getId();
-        return versionStr;
+        return FabricLoader.getInstance().getModContainer("minecraft")
+                .orElseThrow(() -> new IllegalStateException("Couldn't find the mod container for minecraft"))
+                .getMetadata().getVersion().getFriendlyString();
     }
 
     public static int compare(String v1, String v2) {

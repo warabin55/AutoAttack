@@ -11,6 +11,7 @@
   "autoattack.midnightconfig.afkAttack": "Ataca automaticamente estando AFK",
 
   "category.autoattack.autoattack": "AutoAttack",
+  "key.category.autoattack.autoattack": "AutoAttack",
   "key.autoattack.preventsHittingBlocks": "Alterna entre Prevenir a quebra de blocos",
   "key.autoattack.afkAttack": "Alterna entre Ataque em modo afk",
 

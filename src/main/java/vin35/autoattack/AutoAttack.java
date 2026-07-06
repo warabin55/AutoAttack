@@ -5,19 +5,22 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.projectile.ProjectileUtil;
-import net.minecraft.item.*;
-import net.minecraft.text.Text;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.item.BowItem;
+import net.minecraft.world.item.CrossbowItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import vin35.autoattack.config.AutoAttackConfig;
 import vin35.autoattack.util.UpdateUtil;
 
@@ -53,71 +56,65 @@ public class AutoAttack implements ClientModInitializer {
 			//check update
 			if (UPDATE && AutoAttackConfig.checkUpdate) {
 				if (mc.player != null) {
-					mc.player.sendMessage(Text.of("AutoAttack: new Update Detected! Version: " + SERVER_VERSION));
+					mc.player.sendSystemMessage(Component.literal("AutoAttack: new Update Detected! Version: " + SERVER_VERSION));
 					UPDATE = false;
 				}
 			}
 
 			//auto attack
-			if ((mc.options.attackKey.isPressed() || AutoAttackConfig.afkAttack) && mc.player != null && mc.world != null && mc.interactionManager != null
-					&& mc.player.getAttackCooldownProgress(0) >= 1) {
-				if (mc.crosshairTarget != null) {
-					if (mc.crosshairTarget.getType() == HitResult.Type.BLOCK && AutoAttackConfig.cleanCut) {
-						BlockHitResult blockHit = (BlockHitResult) mc.crosshairTarget;
+			if ((mc.options.keyAttack.isDown() || AutoAttackConfig.afkAttack) && mc.player != null && mc.level != null && mc.gameMode != null
+					&& mc.player.getAttackStrengthScale(0) >= 1) {
+				if (mc.hitResult != null) {
+					if (mc.hitResult.getType() == HitResult.Type.BLOCK && AutoAttackConfig.cleanCut) {
+						BlockHitResult blockHit = (BlockHitResult) mc.hitResult;
 						BlockPos blockPos = blockHit.getBlockPos();
-						BlockState blockState = mc.world.getBlockState(blockPos);
+						BlockState blockState = mc.level.getBlockState(blockPos);
 
-						if (blockState.getCollisionShape(mc.world, blockPos).isEmpty() || blockState.getHardness(mc.world, blockPos) == 0.0F) {
-							float reach = mc.interactionManager.getReachDistance();
-							Vec3d camera = mc.player.getCameraPosVec(1.0F);
-							Vec3d rotation = mc.player.getRotationVec(1.0F);
-							Vec3d end = camera.add(rotation.x * reach, rotation.y * reach, rotation.z * reach);
-							EntityHitResult result = ProjectileUtil.raycast(mc.player, camera, end, new Box(camera, end), e -> !e.isSpectator() && e.isAttackable(), reach * reach);
+						if (blockState.getCollisionShape(mc.level, blockPos).isEmpty() || blockState.getDestroySpeed(mc.level, blockPos) == 0.0F) {
+							double reach = mc.player.entityInteractionRange();
+							Vec3 camera = mc.player.getEyePosition(1.0F);
+							Vec3 rotation = mc.player.getViewVector(1.0F);
+							Vec3 end = camera.add(rotation.x * reach, rotation.y * reach, rotation.z * reach);
+							EntityHitResult result = ProjectileUtil.getEntityHitResult(mc.player, camera, end, new AABB(camera, end), e -> !e.isSpectator() && e.isAttackable(), reach * reach);
 							if (result != null && result.getEntity().isAlive()){
-								mc.interactionManager.attackEntity(mc.player, result.getEntity());
-								mc.player.swingHand(Hand.MAIN_HAND);
+								mc.gameMode.attack(mc.player, result.getEntity());
+								mc.player.swing(InteractionHand.MAIN_HAND);
 							}
 						}
-					} else if (mc.crosshairTarget.getType() == HitResult.Type.ENTITY) {
-						Entity entity = ((EntityHitResult) mc.crosshairTarget).getEntity();
+					} else if (mc.hitResult.getType() == HitResult.Type.ENTITY) {
+						Entity entity = ((EntityHitResult) mc.hitResult).getEntity();
 						if (entity.isAlive() && entity.isAttackable()) {
-							mc.interactionManager.attackEntity(mc.player, entity);
-							mc.player.swingHand(Hand.MAIN_HAND);
+							mc.gameMode.attack(mc.player, entity);
+							mc.player.swing(InteractionHand.MAIN_HAND);
 						}
 					}
 				}
 			}
 
 			//auto bow
-			if (mc.options.useKey.isPressed() && mc.player != null && mc.interactionManager != null) {
-				ItemStack stack = mc.player.getActiveItem();
+			if (mc.options.keyUse.isDown() && mc.player != null && mc.gameMode != null) {
+				ItemStack stack = mc.player.getUseItem();
 				Item item = stack.getItem();
 
 				if (item == Items.BOW && AutoAttackConfig.autoBow) {
-					float progress = BowItem.getPullProgress(stack.getMaxUseTime() - mc.player.getItemUseTimeLeft() - 1);
-					//mc.player.sendMessage(Text.of(String.valueOf(progress)));
-					//mc.player.sendMessage(Text.of(String.valueOf(mc.player.getItemUseTimeLeft())));
+					float progress = BowItem.getPowerForTime(stack.getUseDuration(mc.player) - mc.player.getUseItemRemainingTicks() - 1);
 					if (progress == 1.0F) {
-						mc.interactionManager.stopUsingItem(mc.player);
+						mc.gameMode.releaseUsingItem(mc.player);
 					}
 				}
 
 				if (item == Items.CROSSBOW && AutoAttackConfig.autoCrossBow) {
-					float progress = (stack.getMaxUseTime() - mc.player.getItemUseTimeLeft()) / (float) CrossbowItem.getPullTime(stack);
-					//mc.player.sendMessage(Text.of(String.valueOf(progress)));
-					//mc.player.sendMessage(Text.of(String.valueOf(mc.player.getItemUseTimeLeft())));
+					float progress = (stack.getUseDuration(mc.player) - mc.player.getUseItemRemainingTicks()) / (float) CrossbowItem.getChargeDuration(stack, mc.player);
 					if (progress > 1.0F) {
-						mc.interactionManager.stopUsingItem(mc.player);
-						mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
+						mc.gameMode.releaseUsingItem(mc.player);
+						mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
 					}
 				}
 
 				if (item == Items.TRIDENT && AutoAttackConfig.autoTrident) {
-					float progress = (stack.getMaxUseTime() - mc.player.getItemUseTimeLeft()) / 10.0F;
-					//mc.player.sendMessage(Text.of(String.valueOf(progress)));
-					//mc.player.sendMessage(Text.of(String.valueOf(mc.player.getItemUseTimeLeft())));
+					float progress = (stack.getUseDuration(mc.player) - mc.player.getUseItemRemainingTicks()) / 10.0F;
 					if (progress > 1.0F) {
-						mc.interactionManager.stopUsingItem(mc.player);
+						mc.gameMode.releaseUsingItem(mc.player);
 					}
 				}
 			}

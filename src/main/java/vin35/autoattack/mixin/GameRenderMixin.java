@@ -1,16 +1,19 @@
 package vin35.autoattack.mixin;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.entity.projectile.ProjectileUtil;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
-import org.spongepowered.asm.mixin.Final;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,27 +21,32 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import vin35.autoattack.config.AutoAttackConfig;
 
-@Mixin(GameRenderer.class)
+@Environment(EnvType.CLIENT)
+@Mixin(Minecraft.class)
 public class GameRenderMixin {
 
-    @Shadow @Final private MinecraftClient client;
+    @Shadow public HitResult hitResult;
+    @Shadow public LocalPlayer player;
+    @Shadow public ClientLevel level;
+    @Shadow public Entity crosshairPickEntity;
 
-    @Inject(method = "updateTargetedEntity", at = @At("TAIL"), cancellable = true)
-    public void updateTargetedEntity(float tickDelta, CallbackInfo ci) {
-        if (this.client.crosshairTarget != null && this.client.player != null && this.client.world != null) {
-            if (this.client.crosshairTarget.getType() == HitResult.Type.BLOCK && AutoAttackConfig.cleanCut) {
-                BlockHitResult blockHit = (BlockHitResult) this.client.crosshairTarget;
+    // In 26.x the crosshair picking moved from GameRenderer to Minecraft#pick
+    @Inject(method = "pick(F)V", at = @At("TAIL"))
+    public void onPick(float partialTicks, CallbackInfo ci) {
+        if (this.hitResult != null && this.player != null && this.level != null) {
+            if (this.hitResult.getType() == HitResult.Type.BLOCK && AutoAttackConfig.cleanCut) {
+                BlockHitResult blockHit = (BlockHitResult) this.hitResult;
                 BlockPos blockPos = blockHit.getBlockPos();
-                BlockState blockState = this.client.world.getBlockState(blockPos);
+                BlockState blockState = this.level.getBlockState(blockPos);
 
-                if (blockState.getCollisionShape(this.client.world, blockPos).isEmpty() || blockState.getHardness(this.client.world, blockPos) == 0.0F) {
-                    float reach = this.client.interactionManager.getReachDistance();
-                    Vec3d camera = this.client.player.getCameraPosVec(1.0F);
-                    Vec3d rotation = this.client.player.getRotationVec(1.0F);
-                    Vec3d end = camera.add(rotation.x * reach, rotation.y * reach, rotation.z * reach);
-                    EntityHitResult result = ProjectileUtil.raycast(this.client.player, camera, end, new Box(camera, end), e -> !e.isSpectator() && e.isAttackable(), reach * reach);
+                if (blockState.getCollisionShape(this.level, blockPos).isEmpty() || blockState.getDestroySpeed(this.level, blockPos) == 0.0F) {
+                    double reach = this.player.entityInteractionRange();
+                    Vec3 camera = this.player.getEyePosition(1.0F);
+                    Vec3 rotation = this.player.getViewVector(1.0F);
+                    Vec3 end = camera.add(rotation.x * reach, rotation.y * reach, rotation.z * reach);
+                    EntityHitResult result = ProjectileUtil.getEntityHitResult(this.player, camera, end, new AABB(camera, end), e -> !e.isSpectator() && e.isAttackable(), reach * reach);
                     if (result != null && result.getEntity().isAlive()){
-                        this.client.targetedEntity = result.getEntity();
+                        this.crosshairPickEntity = result.getEntity();
                     }
                 }
             }
